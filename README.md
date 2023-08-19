@@ -7,10 +7,10 @@ Step 1: business idea validation
 - A first welcome agent interacts with the client to rephrase the business idea and make sure that is not illegal
 - If the welcome agent and the Human reach an agreement on the business idea, then a trigger is sent and the process go to step 2
 
-> ** Private note **
-- input: Human business idea
-- output: rephrased business idea
-- contract: welcome agent and Human reach an agreement 
+> ** note **
+>- input: Human business idea
+>- output: rephrased business idea
+>- contract: welcome agent and Human reach an agreement 
 
 Step 2: Business plan
 - The step 2 is triggered by the smart contract of step 1 (inpout rephrased business idea)
@@ -20,10 +20,10 @@ Step 2: Business plan
 > You role is crafting a comprehensive business plan for my innovative venture. This business aims to **\[rephrased business idea\]**. The plan should encompass key elements such as market research, target audience identification, unique value proposition, technology integration, data privacy and security measures, monetization strategy, customer acquisition and marketing approaches, operational plan highlighting \[AI-driven customer support or any relevant specifics\], scalability tactics, financial projections considering user growth, system maintenance costs, and profitability estimations, as well as a forward-looking long-term vision. Please ensure each stage receives my approval before proceeding to the next.
 > Tools: Business plan agent should be allowed to use a google search tool to get market data [https://www.polarismarketresearch.com/](https://www.polarismarketresearch.com/)
 
-> ** Private note **
-- input: rephrased business idea
-- output: business plan
-- contract: Human and busines plan agent agree on the business plan. The business plan is still legal. The business plan adress the following sections: target audience, value proposition, monetezation strategy, customer acquisition and marketing strategy, financial projections, profitability estimation
+> ** note **
+>- input: rephrased business idea
+>- output: business plan
+>- contract: Human and busines plan agent agree on the business plan. The business plan is still legal. The business plan adress the following sections: target audience, value proposition, monetezation strategy, customer acquisition and marketing strategy, financial projections, profitability estimation
 
 Step 3: Business process design
 - The step 3 is triggered by the smart contract of step 2
@@ -42,8 +42,8 @@ Step 4 is an iterative step between two agents:
 - task specifier agent who recieves as input the detailed description of the business process
 - python programmer: who generates the code based on the instructions of the task specifier
 
-> ** Private note **
-- input: Human business idea
-- output: zip file with the business plan, the business process description and the code
-- contract: between two agents, each one should stick to his system prompt. Each message each checked before submission
+> ** note **
+>- input: Human business idea
+>- output: zip file with the business plan, the business process description and the code
+>- contract: between two agents, each one should stick to his system prompt. Each message each checked before submission
 

@@ -1,5 +1,5 @@
 # pip install langchain openai streamlit
-# to run the script: streamlit run app.py
+# to run the script: streamlit run demo.py
 # go to: Local URL: http://localhost:8501
 
 
@@ -18,7 +18,16 @@ from langchain.schema import (
 
 # bring openai api key
 import os, openai
-openai.api_key = os.environ["OPENAI_API_KEY"]
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
+
+# Access the secret key
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+
+#openai.api_key = os.environ["OPENAI_API_KEY"]
 
 # logging
 import logging

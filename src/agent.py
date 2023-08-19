@@ -1,2 +1,3 @@
-
+class Agent():
+    pass
 
