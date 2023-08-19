@@ -19,7 +19,7 @@ class Contract():
         self.agent1 = agent1
         self.agent2 = agent2
         self.llm = llm
-        self.rules = []
+        self.rules = ""
         self.initialize()
     
     def initialize(self):
@@ -42,7 +42,9 @@ class Contract():
         systemPrompt = (SystemMessagePromptTemplate
                         .from_template(initPrompt)
                         .format(agent1=self.agent1.name, agent2=self.agent2.name))
-        self.rules = self.parse(self.llm(HumanMessage(content=systemPrompt.content))) # syntax à revoir
+        self.rules = self.parse(self.llm(
+            [HumanMessage(content=systemPrompt.content)]
+        )) # syntax à revoir
     
     def check(self, message):
         answer = 1
@@ -54,22 +56,27 @@ class Contract():
                         .from_template(checkPrompt)
                         .format(message=message, rules=self.rules))
         # à mettre dans un block try/except intelligent?    #syntax à revoir
-        answer = self.parse(self.llm(HumanMessage(content=systemPrompt.content)))    
-        return answer
+        answer = self.parse(self.llm(
+            [HumanMessage(content=systemPrompt.content)]
+        ))
+        print("answer: ", str(answer))
+        return answer.split("\n")[-1] == "TRUE"
     
-    def parse(self, message):
-        return message
+    def parse(self, message):   
+        return message.content
     
     ## A compléter il faut une while loop and verif de la condition de terminaison
     def run(self, input):
         result = False
         while not result:
-            output = self.agent1.getPrompt(input)
+            print("agent2")
+            output = self.agent2.getPrompt(input)
             result = self.check(output)
         
         result = False
         while not result:
-            output = self.agent2.getPrompt(input)
+            print("agent1")
+            output = self.agent1.getPrompt(output)
             result = self.check(output)
             
         return output

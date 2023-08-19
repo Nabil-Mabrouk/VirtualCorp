@@ -17,11 +17,13 @@ def start():
     humanTemplate = """
     You will be interacting with a virtual agent. You have to propose a legal busines idea. the agent will rephrase your idea.
     If you agree with the rephrasing type "I agree". If not suggest a modification.
+    The virtual agent rephrasing will appear here: {input}
     """
     human.setTemplate(humanTemplate)
     welcomeTemplate = """
     You will recieve a business idea from a human. You must rephrase the business idea in less than 200 words. 
     You will submit you rephrased idea to the human for validation. You are done once the human express his agreement.
+    The user agent phrase is : {input}
     """
     welcomeAgent.setTemplate(welcomeTemplate)
 
@@ -33,7 +35,8 @@ def start():
     
     pipe.execute(user_input)
     
-    
+    for entry in pipe.pipeline:
+        print(entry)
     
     
 if __name__ == '__main__':

@@ -1,4 +1,7 @@
 import enum
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts.chat import HumanMessagePromptTemplate
+from langchain.schema import HumanMessage
 
 
 class AgentType(enum.Enum):
@@ -14,16 +17,20 @@ class Agent():
         self.prompt = ""
         self.input = ""
         self.output = ""
+        self.llm = ChatOpenAI(temperature=0)
         
     def setTemplate(self, template):
-        self.template = template
+        self.template = HumanMessagePromptTemplate.from_template(template)
         
-    def getPrompt(self, *args):
+    def getPrompt(self, inp):
         if self.type == AgentType.HUMAN:
-            self.output = (input("Please enter your business idea : ")
-                           or "Launch an ecommerce business to trade 3d printed parts")
+            self.output = input(inp)
             return self.output
-        self.output = self.template.format_messages(input)
+        self.prompt = self.template.format(input=inp)
+        self.output = self.llm(
+            [HumanMessage(content=self.prompt.content)]
+        ).content
+        
         return self.output
         
         

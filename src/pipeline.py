@@ -13,7 +13,14 @@ class Entry():
         return self.output
     
     def __str__(self) -> str:
-        return str(self.contract) + " with input: " + str(self.input) + " and output: " + str(self.output)
+        return f"Entry input: {self.input}\n" \
+               f"Entry output: {self.output}\n" \
+               f"Entry contract agent1: name {self.contract.agent1.name}\n" \
+               f"                       input: {self.contract.agent1.input}\n" \
+               f"                       output: {self.contract.agent1.output}\n" \
+               f"Entry contract agent2: name {self.contract.agent2.name}\n" \
+               f"                       input: {self.contract.agent2.input}\n" \
+               f"                       output: {self.contract.agent2.output}\n" \
 
 
 class Pipeline():
@@ -21,8 +28,8 @@ class Pipeline():
         self.name=name
         self.pipeline=[]
     
-    def add(self, contract, input=None, output=None):
-        self.pipeline.append(Entry(contract, input, output))
+    def add(self, contract, input=None):
+        self.pipeline.append(Entry(contract, input))
 
     def execute(self, first_input):
         """Sequentially executes the piped contracts.
