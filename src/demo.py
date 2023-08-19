@@ -1,8 +1,12 @@
+"""Demo for CAMEL."""
+
 # pip install langchain openai streamlit
 # to run the script: streamlit run demo.py
 # go to: Local URL: http://localhost:8501
 
 
+import streamlit as st
+import logging
 from typing import List
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import (
@@ -17,7 +21,8 @@ from langchain.schema import (
 )
 
 # bring openai api key
-import os, openai
+import os
+import openai
 from dotenv import load_dotenv
 
 # Load environment variables from .env
@@ -26,15 +31,10 @@ load_dotenv()
 # Access the secret key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-
-#openai.api_key = os.environ["OPENAI_API_KEY"]
-
 # logging
-import logging
 logging.basicConfig(level=logging.INFO)
 
 # GUI
-import streamlit as st
 
 class CAMELAgent:
     def __init__(
@@ -49,14 +49,14 @@ class CAMELAgent:
     def reset(self) -> None:
         self.init_messages()
         return self.stored_messages
-    
+
     def init_messages(self) -> None:
         self.stored_messages = [self.system_message]
-    
+
     def update_messages(self, message: BaseMessage) -> List[BaseMessage]:
         self.stored_messages.append(message)
         return self.stored_messages
-    
+
     def step(
         self,
         input_message: HumanMessage,
@@ -67,52 +67,63 @@ class CAMELAgent:
 
         return output_message
 
+
+def get_sys_msgs(assistant_role_name: str, user_role_name: str, task: str):
+
+    assistant_sys_template = SystemMessagePromptTemplate.from_template(
+        template=assistant_inception_prompt
+    )
+
+    assistant_sys_msg = assistant_sys_template.format_messages(
+        assistant_role_name=assistant_role_name,
+        user_role_name=user_role_name,
+        task=task,
+    )[0]
+
+    user_sys_template = SystemMessagePromptTemplate.from_template(
+        template=user_inception_prompt
+    )
+
+    user_sys_msg = user_sys_template.format_messages(
+        assistant_role_name=assistant_role_name,
+        user_role_name=user_role_name,
+        task=task,
+    )[0]
+
+    return assistant_sys_msg, user_sys_msg
+
+
 if __name__ == '__main__':
     st.title("Experimentation on collaborative Agents")
     # Create a helper to get system message for AI assistant and AI user from role names and the task
-    def get_sys_msgs(assistant_role_name:str, user_role_name: str, task: str):
 
-        assistant_sys_template = SystemMessagePromptTemplate.from_template(
-            template=assistant_inception_prompt
-        )
-
-        assistant_sys_msg = assistant_sys_template.format_messages(
-            assistant_role_name = assistant_role_name,
-            user_role_name=user_role_name,
-            task=task,
-        )[0]
-
-        user_sys_template= SystemMessagePromptTemplate.from_template(
-            template=user_inception_prompt
-        )
-
-        user_sys_msg = user_sys_template.format_messages(
-            assistant_role_name = assistant_role_name,
-            user_role_name=user_role_name,
-            task=task,
-        )[0]
-
-        return assistant_sys_msg, user_sys_msg
-    
-    user_role_name = st.text_input("Enter user role name", placeholder=" (i.e: Stock Trader)")
-    assistant_role_name=st.text_input("Enter assistant role name",placeholder=" (i.e: Python programmer)")
-    task = st.text_input("Enter your task",placeholder=" (i.e: Develop a trading bot for the stock market)")
-    word_limit=st.slider("word limit for task brainstorming:", min_value=10, max_value=200, value=50)
-    chat_turn_limit=st.slider("Number of chat rounds between the agents :", min_value=2, max_value=30, value=10)
-    #assistant_role_name = "Python programmer"
-    #user_role_name = "Stock Trader"
-    #task = "Develop a trading bot for the stock market"
-    #word_limit = 50  # word limit for task brainstorming
+    user_role_name = st.text_input(
+        "Enter user role name", placeholder=" (i.e: Stock Trader)")
+    assistant_role_name = st.text_input(
+        "Enter assistant role name", placeholder=" (i.e: Python programmer)")
+    task = st.text_input(
+        "Enter your task", placeholder=" (i.e: Develop a trading bot for the stock market)")
+    word_limit = st.slider("word limit for task brainstorming:",
+                           min_value=10, max_value=200, value=50)
+    chat_turn_limit = st.slider(
+        "Number of chat rounds between the agents :", min_value=2, max_value=30, value=10)
+    # assistant_role_name = "Python programmer"
+    # user_role_name = "Stock Trader"
+    # task = "Develop a trading bot for the stock market"
+    # word_limit = 50  # word limit for task brainstorming
 
     if st.button('Start') and not st.button('stop'):
         st.write(":green[Step 1: Use an agent to make the task more specific]")
         # Create a task specify agent for brainstorming and get the specified task
-        task_specifier_sys_msg = SystemMessage(content = "You can make a task more specific.")
+        task_specifier_sys_msg = SystemMessage(
+            content="You can make a task more specific.")
         task_specifier_prompt = """Here is a task that {assistant_role_name} will help {user_role_name} to complete: {task}.
         Please make it more specific. Be creative and imaginative.
         Please reply with the specified task in {word_limit} words or less. Do not add anything else."""
-        task_specifier_template = HumanMessagePromptTemplate.from_template(template=task_specifier_prompt)
-        task_specify_agent = CAMELAgent(task_specifier_sys_msg, ChatOpenAI(temperature=0))
+        task_specifier_template = HumanMessagePromptTemplate.from_template(
+            template=task_specifier_prompt)
+        task_specify_agent = CAMELAgent(
+            task_specifier_sys_msg, ChatOpenAI(temperature=0))
         task_specifier_msg = task_specifier_template.format_messages(
             assistant_role_name=assistant_role_name,
             user_role_name=user_role_name,
@@ -172,9 +183,11 @@ if __name__ == '__main__':
         Never say <CAMEL_TASK_DONE> unless my responses have solved your task."""
 
         # Create AI assistant and AI user agents
-        assistant_sys_msg, user_sys_msg = get_sys_msgs(assistant_role_name, user_role_name, specified_task)
+        assistant_sys_msg, user_sys_msg = get_sys_msgs(
+            assistant_role_name, user_role_name, specified_task)
         st.write(":blue[Assistant instruction:]", assistant_sys_msg.content)
-        assistant_agent = CAMELAgent(assistant_sys_msg, ChatOpenAI(temperature=0))
+        assistant_agent = CAMELAgent(
+            assistant_sys_msg, ChatOpenAI(temperature=0))
         st.write(":red[User instruction:]", user_sys_msg.content)
         user_agent = CAMELAgent(user_sys_msg, ChatOpenAI(temperature=0))
 
@@ -182,7 +195,7 @@ if __name__ == '__main__':
         assistant_agent.reset()
         user_agent.reset()
 
-         # Initialize chats
+        # Initialize chats
         assistant_msg = HumanMessage(
             content=(
                 f"{user_sys_msg.content}. "
@@ -202,20 +215,21 @@ if __name__ == '__main__':
 
         n = 0
         while n < chat_turn_limit:
-            n +=1
+            n += 1
             user_ai_msg = user_agent.step(assistant_msg)
             user_msg = HumanMessage(content=user_ai_msg.content)
-            #print("red[AI User]", user_role_name,":\n\n",user_msg.content,"\n\n")
+            # print("red[AI User]", user_role_name,":\n\n",user_msg.content,"\n\n")
             st.divider()
             st.write(":green[Iteration numer:]", n)
             st.divider()
-            st.write(":red[AI User]", user_role_name, ":\n\n",user_msg.content,"\n\n")
+            st.write(":red[AI User]", user_role_name,
+                     ":\n\n", user_msg.content, "\n\n")
 
-        
             assistant_ai_msg = assistant_agent.step(user_msg)
             assistant_msg = HumanMessage(content=assistant_ai_msg.content)
-            print(f"AI Assistant ({assistant_role_name}):\n\n{assistant_msg.content}\n\n")
-            st.write(":blue[AI Assistant:]",assistant_role_name, ":\n\n",assistant_msg.content,"\n\n")
+            print(
+                f"AI Assistant ({assistant_role_name}):\n\n{assistant_msg.content}\n\n")
+            st.write(":blue[AI Assistant:]", assistant_role_name,
+                     ":\n\n", assistant_msg.content, "\n\n")
             if "<CAMEL_TASK_DONE>" in user_msg.content:
                 break
-

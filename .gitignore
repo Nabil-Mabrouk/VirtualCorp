@@ -1,2 +1,6 @@
 .env
 venv
+.vim
+.DS_Store
+# Ignore pycache files
+__pycache__

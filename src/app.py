@@ -1,34 +1,43 @@
+from agent import Agent, AgentType
+from contract import Contract
+from pipeline import Pipeline
 
-import agent
-import contract
 
-if __name__ == '__main__':
-
-    pipeline = []
-
+def start():
+    pipe = Pipeline()
     # Initialization
-    print("Welcome at VirtualCORP \n")
-    user_input = input("Please enter your business idea : ")
-
-    # start
-
+    print("Welcome at VirtualCORP")
+    user_input = (input("Please enter your business idea : ")
+                  or "Launch an ecommerce business to trade 3d printed parts")
+    human = Agent(name="Human", type=AgentType.HUMAN)
+    welcomeAgent = Agent(name = "Welcome Agent", type=AgentType.VIRTUAL)
+    
+    # start the pipeline
     # step 1: validate business idea
-    human = agent.Agent(name="Human", type = agent.HUMAN)
-    humanTemplate="""   You will be interacting with a virtual agent. You have to propose a legal busines idea. the agent will rephrase your idea.
+    humanTemplate = """
+    You will be interacting with a virtual agent. You have to propose a legal busines idea. the agent will rephrase your idea.
     If you agree with the rephrasing type "I agree". If not suggest a modification.
+    The virtual agent rephrasing will appear here: {input}
     """
     human.setTemplate(humanTemplate)
-    welcomeAgent = agent.Agent(name = "Welcome Agent", type = agent.VIRTUAL)
-    agent1Template=""" You will recieve a business idea from a human. You must rephrase the business idea in less than 200 words. 
+    welcomeTemplate = """
+    You will recieve a business idea from a human. You must rephrase the business idea in less than 200 words. 
     You will submit you rephrased idea to the human for validation. You are done once the human express his agreement.
+    The user agent phrase is : {input}
     """
-    welcomeAgent.setTemplate(agent1Template)
+    welcomeAgent.setTemplate(welcomeTemplate)
 
     ## Create the contract
-    contract1 = contract.Contract(agent1=human, agent2 = welcomeAgent)
+    initialContract = Contract(agent1=human, agent2=welcomeAgent)
 
     ## register the contract
-    pipline.append(contract1)
-
-
-    #step 2: etc ..
+    pipe.add(initialContract)
+    
+    pipe.execute(user_input)
+    
+    for entry in pipe.pipeline:
+        print(entry)
+    
+    
+if __name__ == '__main__':
+    start()
