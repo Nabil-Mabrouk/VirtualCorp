@@ -1,0 +1,8 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "[markdown]": {
+        "editor.autoClosingQuotes": "never",
+    },
+}

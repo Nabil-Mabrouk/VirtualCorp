@@ -1,49 +1,63 @@
 # VirtualCorp
 
-VirtualCorp aims to create fully working online business where all employees are virtual agent
-How it works:
-Step 1: business idea validation
-- The process starts by a prompt introduced by the client (Human) about a busines process idea that he would like to automate
-- A first welcome agent interacts with the client to rephrase the business idea and make sure that is not illegal
-- If the welcome agent and the Human reach an agreement on the business idea, then a trigger is sent and the process go to step 2
+VirtualCorp aims to create fully working online business where employees can be humans or virtual agent.
+The goal of the company is to fulfill customers' expectations by achieving `high level` tasks that requires
+collaboration between the employees and the client.
 
-> ** note **
->- input: Human business idea
->- output: rephrased business idea
->- contract: welcome agent and Human reach an agreement 
+In order to achieve a task requested by the customer, the system runs through a process assimilated as a
+`pipeline` of `interactions`. It is a collaborative process between different agents and the customer is 
+one of them. The interaction is subject to a contract describing the obligations of each participant in the
+interaction and also their expectations. The role of the contract is to decide if the expected interaction
+is fulfilled or not.
 
-Step 2: Business plan
-- The step 2 is triggered by the smart contract of step 1 (inpout rephrased business idea)
-- The step 2 aim to develop a simple business plan (output business plan)
-- The business plan is proposed business plan agent and validated by the user
-- The business plan agent recieves this system prompt:
-> You role is crafting a comprehensive business plan for my innovative venture. This business aims to **\[rephrased business idea\]**. The plan should encompass key elements such as market research, target audience identification, unique value proposition, technology integration, data privacy and security measures, monetization strategy, customer acquisition and marketing approaches, operational plan highlighting \[AI-driven customer support or any relevant specifics\], scalability tactics, financial projections considering user growth, system maintenance costs, and profitability estimations, as well as a forward-looking long-term vision. Please ensure each stage receives my approval before proceeding to the next.
-> Tools: Business plan agent should be allowed to use a google search tool to get market data [https://www.polarismarketresearch.com/](https://www.polarismarketresearch.com/)
+# How it works:
 
-> ** note **
->- input: rephrased business idea
->- output: business plan
->- contract: Human and busines plan agent agree on the business plan. The business plan is still legal. The business plan adress the following sections: target audience, value proposition, monetezation strategy, customer acquisition and marketing strategy, financial projections, profitability estimation
+## The process
 
-Step 3: Business process design
-- The step 3 is triggered by the smart contract of step 2
-- Step 3 aims to provide a detailed description of the business process (output business process description)
-- The business process is proposed by the agent : Business process expert and validated by the client
-The business process agent recieves this system prompt:
-> I will provide you with a business plan for a fully automated **\[rephrased business idea\]**. As a business process design expert, I need your assistance to define the automated processes required to achieve our objectives. Please ensure each process includes: inputs, outputs, tasks, actors, resources, data and data flow, interactions with other processes, and KPIs. Wait for my approval before moving on to each subsequent process. Also, kindly remember to maintain the user's approval at each step
+- The `system` initiates the process with a first interaction between the `customer` and an `ai agent`.
+- The `ai agent` starts by rephrasing the `customer`'s expectations until the `customer` agrees with it.
+- After the agreement, the system runs through several `interactions` involving each 2 well determined `agents`.
+- Each `agent` needs to fulfill a `contract` supervised by the `system`.
+- The `contracts` are defined between `agents` and the company *Virtual Corp* and determine possible `interactions`
+and how they should be handled by either parties.
 
-> ** Private note **
-- input: Business plan and rephrased business idea
-- output: detailed business process
-- contract: business process agent and Human reach an agreement
+## Building blocs
+- The `System`:
+  1. It is unique and is the supervisor of all the agents, pipelines and interactions.
+  2. It initialize a `pipeline` to handle **one** customer's expectation.
+- A `Pipeline`:
+  1. It is chain of defined `Contracts` required to fulfill the customer's expectation.
+  2. When the pipeline is executed, it runs through each contract.
+  3. For each contract, it starts the interaction.
+  4. Then it checks the messages before sending them to the receiving party.
+  5. it will wait until 
+- A `Contract`:
+  1. It involves 2 parties: `First` and `Second` qui sont deux `Agents`.
+  2. It defines the `Rules` based on the `Prompts` of both parties.
+  3. If the `Rules` are **not** fulfilled by the `Message`, it is set `To Revise`.
+  4. The `Message` passed back to the sender to revise it (loop to 3.).
+  5. The sender receives a log explaining why the `Message` was rejected.
+  6. If all the `Rules` are fulfilled by the `Message`, it is `Released` and passed to the receiver.
+  7. The interaction stops.
+- A `Rule`:
+  1. It can be of 2 types: `Compliance` and `Termination`.
+  2. `Compliance`: It is a condition that should be fulfilled by a message to be `Accepted`.
+  3. `Termination`: It is a condition to decide if the interactions end or not.
+- An `Agent`:
+  1. It can be `HUMAN` (requiring human input) or `VIRTUAL` (AI based).
+  2. It receives an intial `Prompt`
+  3. It outputs a `Message`.
+- A `Prompt`:
+  1. It defines what the `Agent` should handle as instructions.
+  2. It containes placeholders for `Inputs`.
+- A `Message`:
+  1. It is the output of the agent
+  2. If it is `HUMAN`, it is the manual answer to the prompt on the screen
+  3. If it is a `VIRTUAL`, it is the predicted response from the Language Model.
+  4. The message lifecycle
+    1. `Created`
+    2. `Rejected`
+    3. `Accepted`
 
-Step 4: Business creation
-Step 4 is an iterative step between two agents:
-- task specifier agent who recieves as input the detailed description of the business process
-- python programmer: who generates the code based on the instructions of the task specifier
 
-> ** note **
->- input: Human business idea
->- output: zip file with the business plan, the business process description and the code
->- contract: between two agents, each one should stick to his system prompt. Each message each checked before submission
 
