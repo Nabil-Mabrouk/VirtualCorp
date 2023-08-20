@@ -19,22 +19,68 @@ class Contract():
         self.agent1: Agent = agent1
         self.agent2: Agent = agent2
         self.llm = llm
-        self.rules = self._extract_rules()
+        #self.rules = self._extract_rules()
+        self.termination = self._extract("termination")
+        self.rules = self._extract("rules")
 
-    # mon idée initiale est que le llm du contrat génère automatiquement les rules à partir des promptTemplates
-    # des agents. Pourquoi? parce que les rules à respecter entre le contrat initial (human/agent) et le contrat
-    # (agent/agent) ne sont pas forcément les mêmes.
-    # L'agent a une mission de faire un certain nombre de choses, de produire un output dans un format particulier.
-    # Le contrat contôle que l'agent rempli bien la mission qui lui a été attribué.
-    # Idem dans un agent HUMAN on peut imaginer un promptTemplate qui définit ce qui est attendu de l'Humain par
-    # l'agent avec qui il va interagir.
-    # J'ai pensé aussi aux rules comme une liste de manière à identifier la rule qui n'a pas été respectée dans un
-    # contrat et d'avoir des messages du type:
-    # - Contract name: Violation of rule [rule id] by agent [agent name].
-    # - Rule [Rule_id]: [rule_description].
-    # - [agent_output]: ....
-    # on peut ultérieurement avec ça collecter progressivement des infos sur le type de rule avec lesquels les llm 
-    # galèrent et fine-tuner de manière plus spécifique
+    def _extract(self, to_extract):
+        agent1 = self.agent1.name
+        prompt1 = self.agent1.template
+
+        agent2 = self.agent2.name
+        prompt2 = self.agent2.template
+
+        template1 = """
+            The agent named {agent1} recieved the following prompt:
+            Prompt: {prompt1}
+
+            The agent named {agent2} recieved the following prompt
+            Prompt: {prompt2}
+
+            From these prompts extract:
+
+            - the rules and constrain that {agent1} must comply with
+            - the rules and constrains that {agent2} must comply with
+
+            format your answer as a list two columns: ['agent', 'rule']
+        """
+        template2 = """
+            The agent named {agent1} recieved the following prompt:
+            Prompt: {prompt1}
+
+            The agent named {agent2} recieved the following prompt
+            Prompt: {prompt2}
+
+            From these prompts extract:
+
+            - the conditions that must be fullfilled to end the interaction between the two agents
+
+            Format your answer as a list a list of confitions
+        """
+
+        if to_extract=="rules":
+            template=template1
+        else:
+            template=template2
+
+        prompt = PromptTemplate(
+            template=template,
+            input_variables=["agent1", "prompt1", "agent2", "prompt2"],
+        )
+
+        _input = prompt.format_prompt(
+            agent1=agent1, prompt1=prompt1, agent2=agent2, prompt2=prompt2)
+
+        output = self.llm([HumanMessage(content=_input.to_string())]).content
+
+        print(f"Extract :({to_extract}): {output}")
+
+        return output
+
+
+
+
+
 
     def _extract_rules(self):
         agent1 = self.agent1.name
@@ -104,8 +150,37 @@ class Contract():
                         .format(agent1=self.agent1.name, agent2=self.agent2.name))
         self.rules = self.parse(self.llm(
             [HumanMessage(content=systemPrompt.content)]
-        ))  # syntax à revoir
+        ))
 
+
+    def _check(self, message, sender):
+        answer = 1
+        checkPrompt = """
+        You will be provided with a message sent by a sender and a list of compliance rule and termination rules.
+        You must check if the message is compliant with the compliance rules and if the termination condition is satisfied.
+        You must answer only by "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
+        -----
+        message: {message}
+        -----
+        sender: {sender}
+        -----
+        compliance rules: {rules}
+        -----
+        termination rules: {termination}
+
+        ----
+        You output must be one of these choices and nothing else: "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
+        """
+        systemPrompt = (SystemMessagePromptTemplate
+                        .from_template(checkPrompt)
+                        .format(message=message, sender=sender,rules=self.rules, termination=self.termination))
+        # à mettre dans un block try/except intelligent?    #syntax à revoir
+        answer = self.parse(self.llm(
+            [HumanMessage(content=systemPrompt.content)]
+        ))
+        print(f"Contract: {self.name} - Message from agent: {sender} - Status = ", str(answer))
+        return answer.split("\n")[-1]
+    
     def check(self, message):
         answer = 1
         checkPrompt = """
@@ -131,12 +206,21 @@ class Contract():
         compliance = False
         termination = False
         iteration = 0
+
+        # if NOT COMPLIED --> exit while loop ?
+        # attention si Terminated on doit retourner les deux derniers outputs sinon on peut ne retourner 
+        # que la formule de terminaison (dernier output exemple I agree)ce qui ne sert à rien au contrat suivant
+        
         while not termination and not compliance and iteration < 10:
-            output = self.agent2.step(input)
-            compliance = self.check(output) in ["COMPLIANT", "TERMINATED"]
-            input = self.agent1.step(output)
-            compliance = compliance and (self.check(input) in ["COMPLIANT", "TERMINATED"])
-            termination = self.check(input) == "TERMINATED"
+            output = self.agent1.step(input)
+            status = self._check(output, sender=self.agent1.name)
+            compliance =  status in ["COMPLIANT", "COMPLIANT AND TERMINATED"]
+            termination = status in ["COMPLIANT AND TERMINATED"]
+
+            input = self.agent2.step(output)
+            status = self._check(input, sender=self.agent2.name)
+            compliance =  status in ["COMPLIANT", "COMPLIANT AND TERMINATED"]
+            termination = status in ["COMPLIANT AND TERMINATED"]
             iteration += 1
 
         return output
