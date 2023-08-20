@@ -40,9 +40,8 @@ def start():
     
     ## Start the pipeline
     print("Welcome at VirtualCORP")
-    user_input = (input("Please enter your business idea : ")
-                  or "Launch an ecommerce business to trade 3d printed parts")
-    pipe.execute(user_input)
+    initial_input = "Please enter your business idea : "
+    pipe.execute(initial_input)
     
     ## Log the pipeline
     for entry in pipe.pipeline:
