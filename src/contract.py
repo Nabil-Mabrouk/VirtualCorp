@@ -26,7 +26,7 @@ class Contract():
         #self.rules = self._extract_rules()
         self.termination = self._extract("termination")
         self.rules = self._extract("rules")
-        self.MAX_ITER=os.getenv("MAX_ITER")
+        self.MAX_ITER = int(os.getenv("MAX_ITER"))
 
     def _extract(self, to_extract):
         agent1 = self.agent1.name
@@ -127,7 +127,7 @@ class Contract():
         # attention si Terminated on doit retourner les deux derniers outputs sinon on peut ne retourner 
         # que la formule de terminaison (dernier output exemple I agree)ce qui ne sert à rien au contrat suivant
         
-        while not termination and not compliance and iteration < self.MAX_ITER:
+        while not termination and not compliance and (iteration < self.MAX_ITER):
             print(f"=======\nContract: {self.name} - Iteration: {iteration}\n")
             output = self.agent1.step(input)
             status = self._check(output, sender=self.agent1.name)

@@ -21,7 +21,7 @@ def start():
     # step 1: validate business idea
     humanTemplate = """
     You will be interacting with a virtual agent. You have to propose a legal busines idea. the agent will rephrase your idea.
-    If you agree with the rephrasing type "I agree". If not suggest a modification.
+    If the answer of the virtual agent is plausible and you agree with the rephrasing, answer "I agree". If you do not agree, please, suggest a modification.
     The virtual agent rephrasing will appear here: {input}
     """
     human.setTemplate(humanTemplate)
