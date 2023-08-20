@@ -9,6 +9,10 @@ from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain.prompts import PromptTemplate
 
 from agent import Agent
+from dotenv import load_dotenv
+# Access the secret key
+load_dotenv()
+import os
 
 # ajouter un nom au contrat pour mieux l'identifier dans le log ou dans les print. Branch new --> [DONE]
 
@@ -22,6 +26,7 @@ class Contract():
         #self.rules = self._extract_rules()
         self.termination = self._extract("termination")
         self.rules = self._extract("rules")
+        self.MAX_ITER=os.getenv("MAX_ITER")
 
     def _extract(self, to_extract):
         agent1 = self.agent1.name
@@ -83,7 +88,7 @@ class Contract():
         checkPrompt = """
         You will be provided with a message sent by a sender and a list of compliance rule and termination rules.
         You must check if the message is compliant with the compliance rules and if the termination condition is satisfied.
-        You must absolutely explain your decision.
+        In the case where you answer is "NON COMPLIANT" and only in this case you must explain why it is non compliant.
         You must end your answer in a deidcated line by only "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
         -----
         message: {message}
@@ -95,7 +100,7 @@ class Contract():
         termination rules: {termination}
 
         ----
-        You output must be one of these choices and nothing else: "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
+        Your output must be one of these choices and nothing else: "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
         """
         systemPrompt = (SystemMessagePromptTemplate
                         .from_template(checkPrompt)
@@ -104,7 +109,7 @@ class Contract():
         answer = self.parse(self.llm(
             [HumanMessage(content=systemPrompt.content)]
         ))
-        print(f"=======\n\nContract: {self.name} - Message from agent: {sender} - Status = ", str(answer))
+        print(f"=======\nContract: {self.name} - Message from agent: {sender} - Status = ", str(answer))
         print(f"\n")
         return answer.split("\n")[-1]
     
@@ -122,8 +127,8 @@ class Contract():
         # attention si Terminated on doit retourner les deux derniers outputs sinon on peut ne retourner 
         # que la formule de terminaison (dernier output exemple I agree)ce qui ne sert à rien au contrat suivant
         
-        while not termination and not compliance and iteration < 10:
-            print(f"=======\n\nContract: {self.name} - Iteration: {iteration}\n\n")
+        while not termination and not compliance and iteration < self.MAX_ITER:
+            print(f"=======\nContract: {self.name} - Iteration: {iteration}\n")
             output = self.agent1.step(input)
             status = self._check(output, sender=self.agent1.name)
             compliance =  status in ["COMPLIANT", "COMPLIANT AND TERMINATED"]
