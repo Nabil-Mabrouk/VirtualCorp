@@ -127,7 +127,7 @@ class Contract():
         # attention si Terminated on doit retourner les deux derniers outputs sinon on peut ne retourner 
         # que la formule de terminaison (dernier output exemple I agree)ce qui ne sert à rien au contrat suivant
         
-        while not termination and not compliance and (iteration < self.MAX_ITER):
+        while not termination and not compliance and iteration < self.MAX_ITER:
             print(f"=======\nContract: {self.name} - Iteration: {iteration}\n")
             output = self.agent1.step(input)
             status = self._check(output, sender=self.agent1.name)
