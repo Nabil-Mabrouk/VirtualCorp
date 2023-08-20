@@ -27,6 +27,7 @@ class Agent():
                          else AIMessagePromptTemplate.from_template(template))
         
     def step(self, inp):
+        print(f"Agent {self.name}\nInput: {inp}")
         if self.type == AgentType.HUMAN:
             if DEBUG:        
                 self.prompt = self.template.format(input=inp)
@@ -35,12 +36,14 @@ class Agent():
                 ).content
             else:
                 self.output = input(inp)
-                return self.output
+            print(f"Agent {self.name}\nOutput: {self.output}")
+            return self.output
         self.prompt = self.template.format(input=inp)
         self.output = self.llm(
             [AIMessage(content=self.prompt.content)]
         ).content
         
+        print(f"Agent {self.name}\nOutput: {self.output}")
         return self.output
         
         
