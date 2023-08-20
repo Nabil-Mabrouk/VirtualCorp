@@ -83,7 +83,8 @@ class Contract():
         checkPrompt = """
         You will be provided with a message sent by a sender and a list of compliance rule and termination rules.
         You must check if the message is compliant with the compliance rules and if the termination condition is satisfied.
-        You must answer only by "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
+        You must absolutely explain your decision.
+        You must end your answer in a deidcated line by only "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
         -----
         message: {message}
         -----
