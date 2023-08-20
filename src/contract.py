@@ -80,7 +80,3 @@ class Contract():
             result = self.check(output)
             
         return output
-            
-                
-    
-
