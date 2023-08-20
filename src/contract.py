@@ -103,7 +103,8 @@ class Contract():
         answer = self.parse(self.llm(
             [HumanMessage(content=systemPrompt.content)]
         ))
-        print(f"Contract: {self.name} - Message from agent: {sender} - Status = ", str(answer))
+        print(f"=======\n\nContract: {self.name} - Message from agent: {sender} - Status = ", str(answer))
+        print(f"\n")
         return answer.split("\n")[-1]
     
 
@@ -121,6 +122,7 @@ class Contract():
         # que la formule de terminaison (dernier output exemple I agree)ce qui ne sert à rien au contrat suivant
         
         while not termination and not compliance and iteration < 10:
+            print(f"=======\n\nContract: {self.name} - Iteration: {iteration}\n\n")
             output = self.agent1.step(input)
             status = self._check(output, sender=self.agent1.name)
             compliance =  status in ["COMPLIANT", "COMPLIANT AND TERMINATED"]
