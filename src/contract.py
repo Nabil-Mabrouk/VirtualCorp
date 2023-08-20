@@ -88,8 +88,6 @@ class Contract():
         checkPrompt = """
         You will be provided with a message sent by a sender and a list of compliance rule and termination rules.
         You must check if the message is compliant with the compliance rules and if the termination condition is satisfied.
-        In the case where you answer is "NON COMPLIANT" and only in this case you must explain why it is non compliant.
-        You must end your answer in a deidcated line by only "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
         -----
         message: {message}
         -----
@@ -100,7 +98,8 @@ class Contract():
         termination rules: {termination}
 
         ----
-        Your output must be one of these choices and nothing else: "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
+        In the case where you answer is "NON COMPLIANT" and only in this case you must explain why it is non compliant.
+        You must end your answer in a dedicated line by only "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
         """
         systemPrompt = (SystemMessagePromptTemplate
                         .from_template(checkPrompt)
