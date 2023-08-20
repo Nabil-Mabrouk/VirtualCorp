@@ -1,7 +1,9 @@
 import enum
+from re import DEBUG
+from langchain import PromptTemplate
 from langchain.chat_models import ChatOpenAI
-from langchain.prompts.chat import HumanMessagePromptTemplate
-from langchain.schema import HumanMessage
+from langchain.prompts.chat import HumanMessagePromptTemplate, AIMessagePromptTemplate
+from langchain.schema import HumanMessage, AIMessage
 
 
 class AgentType(enum.Enum):
@@ -20,15 +22,23 @@ class Agent():
         self.llm = ChatOpenAI(temperature=0)
         
     def setTemplate(self, template):
-        self.template = HumanMessagePromptTemplate.from_template(template)
+        self.template = (HumanMessagePromptTemplate.from_template(template)
+                         if self.type == AgentType.HUMAN
+                         else AIMessagePromptTemplate.from_template(template))
         
-    def getPrompt(self, inp):
+    def step(self, inp):
         if self.type == AgentType.HUMAN:
-            self.output = input(inp)
-            return self.output
+            if DEBUG:        
+                self.prompt = self.template.format(input=inp)
+                self.output = self.llm(
+                    [HumanMessage(content=self.prompt.content)]
+                ).content
+            else:
+                self.output = input(inp)
+                return self.output
         self.prompt = self.template.format(input=inp)
         self.output = self.llm(
-            [HumanMessage(content=self.prompt.content)]
+            [AIMessage(content=self.prompt.content)]
         ).content
         
         return self.output
