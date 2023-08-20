@@ -1,14 +1,19 @@
+import os
+import openai
+from dotenv import load_dotenv
+# Access the secret key
+load_dotenv()
+DEBUG = (os.getenv("DEBUG") == "TRUE") or False
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
 from agent import Agent, AgentType
 from contract import Contract
 from pipeline import Pipeline
 
 
 def start():
-    pipe = Pipeline()
     # Initialization
-    print("Welcome at VirtualCORP")
-    user_input = (input("Please enter your business idea : ")
-                  or "Launch an ecommerce business to trade 3d printed parts")
+    pipe = Pipeline(name="VirtualCORP")
     human = Agent(name="Human", type=AgentType.HUMAN)
     welcomeAgent = Agent(name = "Welcome Agent", type=AgentType.VIRTUAL)
     
@@ -28,13 +33,18 @@ def start():
     welcomeAgent.setTemplate(welcomeTemplate)
 
     ## Create the contract
-    initialContract = Contract(agent1=human, agent2=welcomeAgent)
+    initialContract = Contract(name='Welcome desk', agent1=human, agent2=welcomeAgent)
 
     ## register the contract
     pipe.add(initialContract)
     
+    ## Start the pipeline
+    print("Welcome at VirtualCORP")
+    user_input = (input("Please enter your business idea : ")
+                  or "Launch an ecommerce business to trade 3d printed parts")
     pipe.execute(user_input)
     
+    ## Log the pipeline
     for entry in pipe.pipeline:
         print(entry)
     

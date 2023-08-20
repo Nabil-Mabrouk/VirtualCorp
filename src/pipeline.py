@@ -4,8 +4,7 @@
 class Entry():
     def __init__(self, contract, input=None):
         self.contract=contract
-        self.input=input # l'output du contrat précédent
-        # self.output=output # l'input du contrat suivant
+        self.input=input
         self.output=None
     
     def run(self):
@@ -13,15 +12,9 @@ class Entry():
         return self.output
     
     def __str__(self) -> str:
-        return f"Entry input: {self.input}\n" \
-               f"Entry output: {self.output}\n" \
-               f"Entry contract agent1: name {self.contract.agent1.name}\n" \
-               f"                       input: {self.contract.agent1.input}\n" \
-               f"                       output: {self.contract.agent1.output}\n" \
-               f"Entry contract agent2: name {self.contract.agent2.name}\n" \
-               f"                       input: {self.contract.agent2.input}\n" \
-               f"                       output: {self.contract.agent2.output}\n" \
-
+        return f"Entry contract: {self.contract}\n" \
+               f"\tinput: {self.input}\n" \
+               f"\toutput: {self.output}\n"
 
 class Pipeline():
     def __init__(self, name="pipeline"):
@@ -41,3 +34,8 @@ class Pipeline():
         for entry in self.pipeline:
             entry.input=last_output
             last_output=entry.run()
+            
+    def __str__(self) -> str:
+        return f"Pipeline name: {self.name}\n" \
+               f"Pipeline length: {len(self.pipeline)}\n" \
+               f"Pipeline entries: {self.pipeline}\n"
