@@ -5,16 +5,18 @@ class Entry():
     def __init__(self, contract, input=None):
         self.contract=contract
         self.input=input
-        self.output=None
+        self.output_1=""
+        self.output_2=""
     
-    def run(self):
-        self.output=self.contract.run(self.input) 
-        return self.output
+    def run(self, input=""):
+        self.input = input
+        self.output_1, self.output_2 =self.contract.run(self.input)
     
     def __str__(self) -> str:
         return f"Entry contract: {self.contract}\n" \
                f"\tinput: {self.input}\n" \
-               f"\toutput: {self.output}\n"
+               f"\toutput agent 1: {self.output_1}\n" \
+               f"\toutput agent 2: {self.output_2}\n"
 
 class Pipeline():
     def __init__(self, name="pipeline"):
@@ -30,10 +32,8 @@ class Pipeline():
         Args:
             first_input (string): The first input for the first contract in the pipeline.
         """
-        last_output=first_input
         for entry in self.pipeline:
-            entry.input=last_output
-            last_output=entry.run()
+            entry.run(input=first_input)
             
     def __str__(self) -> str:
         return f"Pipeline name: {self.name}\n" \

@@ -20,15 +20,28 @@ def start():
     # start the pipeline
     # step 1: validate business idea
     humanTemplate = """
-    You will be interacting with a virtual agent. You have to propose a legal busines idea. the agent will rephrase your idea.
-    If the answer of the virtual agent is plausible and you agree with the rephrasing, answer "I agree". If you do not agree, please, suggest a modification.
+    You will be interacting with a virtual agent. You have to propose a legal busines idea.
+    The agent will rephrase your idea.
+    The contract will tell you if your message is compliant or not.
+    If the decision of the contract is not compliant, please, modify your answer.
+    If the answer of the virtual agent is plausible and you agree with the rephrasing, answer "I agree".
+    If you do not agree, please, suggest a modification.
     The virtual agent rephrasing will appear here: {input}
+    The contract decision will appear here: {status}
+    The contract reasons will appear here: {reasons}
     """
     human.setTemplate(humanTemplate)
     welcomeTemplate = """
-    You will recieve a business idea from a human. You must rephrase the business idea in less than 200 words. 
-    You will submit you rephrased idea to the human for validation. You are done once the human express his agreement.
+    You will recieve a business idea from a human.
+    You must rephrase the business idea in less than 200 words. 
+    You will submit you rephrased idea to the human for validation.
+    The contract will tell you if your answer is compliant or not and will give the reasons of its decision.
+    If the decision of the contract is not compliant, please, suggest another answer.
+    You need to take into account the reasons of the contract to modify your answer.
+    You are done once the human express his agreement.
     The user agent phrase is : {input}
+    The contract decision will appear here: {status}
+    The contract reasons will appear here: {reasons}
     """
     welcomeAgent.setTemplate(welcomeTemplate)
 
@@ -40,7 +53,7 @@ def start():
     
     ## Start the pipeline
     print("Welcome at VirtualCORP")
-    initial_input = "Please enter your business idea : "
+    initial_input = "Please what is your business idea ?"
     pipe.execute(initial_input)
     
     ## Log the pipeline

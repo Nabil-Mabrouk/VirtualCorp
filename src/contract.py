@@ -44,8 +44,8 @@ class Contract():
 
             From these prompts extract:
 
-            - the rules and constrain that {agent1} must comply with
-            - the rules and constrains that {agent2} must comply with
+            - the rules and constrain that {agent1} must comply with and do not terminate the interaction
+            - the rules and constrains that {agent2} must comply with and do not terminate the interaction
 
             format your answer as a list two columns: ['agent', 'rule']
         """
@@ -58,9 +58,9 @@ class Contract():
 
             From these prompts extract:
 
-            - the conditions that must be fullfilled to end the interaction between the two agents
+            - the exact conditions that, if fulfilled, the interaction between the two agents must be terminated
 
-            Format your answer as a list of conditions
+            format your answer as a list two columns: ['agent', 'rule']
         """
 
         if to_extract=="rules":
@@ -98,19 +98,29 @@ class Contract():
         termination rules: {termination}
 
         ----
-        In the case where you answer is "NON COMPLIANT" and only in this case you must explain why it is non compliant.
-        You must end your answer in a dedicated line by only "COMPLIANT", "COMPLIANT AND TERMINATED", "NON COMPLIANT"
+        
+        Your final decision should formatted as follow:
+        
+        
+        REASON: <YOUR_REASON>
+        Decision: <YOUR_DECISION>
+        
+        <YOUR_DECISION> may be one of the following:
+        - COMPLIANT If compliant and not terminated
+        - NON_COMPLIANT If not compliant
+        - COMPLIANT_AND_TERMINATED If compliant and terminated
         """
+        # In the case where you answer is "NON COMPLIANT" and only in this case 
         systemPrompt = (SystemMessagePromptTemplate
                         .from_template(checkPrompt)
-                        .format(message=message, sender=sender,rules=self.rules, termination=self.termination))
+                        .format(message=message, sender=sender.name,rules=self.rules, termination=self.termination))
         # à mettre dans un block try/except intelligent?    #syntax à revoir
         answer = self.parse(self.llm(
             [HumanMessage(content=systemPrompt.content)]
         ))
-        print(f"=======\nContract: {self.name} - Message from agent: {sender} - Status = ", str(answer))
+        print(f"=======\nContract: {self.name}\nMessage from agent: {sender.name}\nStatus =\n", str(answer))
         print(f"\n")
-        return answer.split("\n")[-1]
+        return answer, answer.split("Decision: ")[-1]
     
 
     def parse(self, message):
@@ -118,25 +128,35 @@ class Contract():
     
 
     def run(self, input):
-        compliance = False
-        termination = False
+        terminated = False
         iteration = 0
 
         # if NOT COMPLIED --> exit while loop ?
         # attention si Terminated on doit retourner les deux derniers outputs sinon on peut ne retourner 
         # que la formule de terminaison (dernier output exemple I agree)ce qui ne sert à rien au contrat suivant
-        
-        while not termination and not compliance and iteration < self.MAX_ITER:
-            print(f"=======\nContract: {self.name} - Iteration: {iteration}\n")
-            output = self.agent1.step(input)
-            status = self._check(output, sender=self.agent1.name)
-            compliance =  status in ["COMPLIANT", "COMPLIANT AND TERMINATED"]
-            termination = status in ["COMPLIANT AND TERMINATED"]
-
-            input = self.agent2.step(output)
-            status = self._check(input, sender=self.agent2.name)
-            compliance =  status in ["COMPLIANT", "COMPLIANT AND TERMINATED"]
-            termination = status in ["COMPLIANT AND TERMINATED"]
+       
+        output_agent2 = input 
+        while not terminated and iteration < self.MAX_ITER:
+            input_agent1 = output_agent2
+            terminated, output_agent1 = self.check_agent(self.agent1, input_agent1)
+            if not terminated:
+                input_agent2 = output_agent1
+                terminated, output_agent2 = self.check_agent(self.agent2, input_agent2)
             iteration += 1
 
-        return output
+        return output_agent1, output_agent2
+
+    def check_agent(self, agent, input):
+        iteration = 0
+        compliant = False
+        terminated = False
+        status = "COMPLIANT"
+        reasons = "Waiting for your message"
+        while not compliant and iteration < self.MAX_ITER:
+            print(f"=======\nContract: {self.name} - Iteration: {iteration}\n")
+            output = agent.step(input, status, reasons)
+            reasons, status = self._check(output, sender=agent)
+            compliant =  status in ["COMPLIANT", "COMPLIANT_AND_TERMINATED"]
+            terminated = status in ["COMPLIANT_AND_TERMINATED"]
+            iteration += 1
+        return terminated, output
