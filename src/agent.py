@@ -19,7 +19,7 @@ class Agent():
         self.prompt = ""
         self.input = ""
         self.output = ""
-        self.llm = (ChatOpenAI(temperature=0) if type == AgentType.VIRTUAL
+        self.llm = (ChatOpenAI(temperature=0.01) if type == AgentType.VIRTUAL
                    else HumanInputLLM(
                        prompt_func=lambda x: print(f"Agent {self.name} received prompt: {x}"),
                    ))

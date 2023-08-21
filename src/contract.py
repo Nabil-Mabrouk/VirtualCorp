@@ -27,6 +27,9 @@ class Contract():
         self.termination = self._extract("termination")
         self.rules = self._extract("rules")
         self.MAX_ITER = int(os.getenv("MAX_ITER"))
+        
+    def __str__(self) -> str:
+        return f"Contract {self.name} between {self.agent1.name} and {self.agent2.name}"
 
     def _extract(self, to_extract):
         agent1 = self.agent1.name
