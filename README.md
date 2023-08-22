@@ -1,7 +1,7 @@
 # VirtualCorp: Automated Compliant Business 
 
 This project enables automated business creation with a focuss on compliance. It involves agents, smart contracts, and pipelines to facilitate collaborative tasks.
-<iframe width="560" height="315" src="https://lablab.ai/event/autonomous-agents-hackathon/virtualcorp/virtualcorp" frameborder="0" allowfullscreen></iframe>
+[![Project presentation]](https://lablab.ai/event/autonomous-agents-hackathon/virtualcorp/virtualcorp)
 
 ## Overview
 

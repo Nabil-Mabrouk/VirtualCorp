@@ -34,7 +34,7 @@ def start():
 
     ## Create the smart contract for business validation step
     contract_model1=GPTModel(model_name)
-    contract1=Contract("Business Validation", agent1=agent1, agent2=agent2, model=contract_model1, template=pts.contract1_prompt)
+    contract1=Contract("Business Validation", agent1=agent1, agent2=agent2, model=contract_model1)
 
     pipeline = Pipeline(name="VirtualCorp", contracts=[contract1])
     
