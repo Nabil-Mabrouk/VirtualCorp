@@ -1,165 +1,114 @@
-from tabnanny import check
-
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts.chat import SystemMessagePromptTemplate
-from langchain.schema import HumanMessage
-
-# from pydantic import BaseModel
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
-from langchain.prompts import PromptTemplate
-
 from agent import Agent
-from dotenv import load_dotenv
-# Access the secret key
-load_dotenv()
-import os
-
-# ajouter un nom au contrat pour mieux l'identifier dans le log ou dans les print. Branch new --> [DONE]
+from logger_config import logger
 
 
-class Contract():
-    def __init__(self, name, agent1, agent2, llm=ChatOpenAI(temperature=0)):
-        self.name = name
-        self.agent1: Agent = agent1
-        self.agent2: Agent = agent2
-        self.llm = llm
-        #self.rules = self._extract_rules()
-        self.termination = self._extract("termination")
-        self.rules = self._extract("rules")
-        self.MAX_ITER = int(os.getenv("MAX_ITER"))
+class Contract:
+    def __init__(self, name, model, agent1, agent2, max_iter=10):
+        self.name=name
+        self.model=model
+        self.agent1 = agent1
+        self.agent2 = agent2
+
+        # Extract Compliance rules
+        self.agent1_rules = self.extract_rules(agent1, agent1.template, agent2.template)
+        self.agent2_rules = self.extract_rules(agent2, agent2.template, agent1.template)
         
-    def __str__(self) -> str:
-        return f"Contract {self.name} between {self.agent1.name} and {self.agent2.name}"
+        # Extract termination keywords from the agent's prompt templates
+        self.agent1_termination_keyword = self.extract_termination_keyword(agent1.prompt_template)
+        self.agent2_termination_keyword = self.extract_termination_keyword(agent2.prompt_template)
 
-    def _extract(self, to_extract):
-        agent1 = self.agent1.name
-        prompt1 = self.agent1.template
+        # Max number of interactions between agent1 and agent2
+        self.max_interactions=max_iter
+        self.iteraction_count=0
+    
+    def extract_rules(self, agent, agent_prompt, other_agent_prompt):
+        # Create a prompt to extract rules for the given agent
+        prompt = f"You are {agent}. Your prompt template is:\n\n{agent_prompt}\n\nFor this interaction, you will communicate with another agent using their prompt template:\n\n{other_agent_prompt}\n\nPlease provide the rules that {agent} must comply with."
 
-        agent2 = self.agent2.name
-        prompt2 = self.agent2.template
+        # Use the contract's language model to extract rules
+        response = self.model.run(prompt)
 
-        template1 = """
-            The agent named {agent1} recieved the following prompt:
-            Prompt: {prompt1}
+        # Extract and return the rules from the model's response
+        rules = response.choices[0].text.strip()
+        return rules
 
-            The agent named {agent2} recieved the following prompt
-            Prompt: {prompt2}
+    def extract_termination_keyword(self, agent_prompt):
+        # Extract a termination keyword from the agent's prompt template
+        # In the agent template the termination keyword must be enclosed in double curly braces, e.g., {{terminate}}
+        keyword_start = agent_prompt.find("{{")
+        keyword_end = agent_prompt.find("}}")
 
-            From these prompts extract:
-
-            - the rules and constrain that {agent1} must comply with and do not terminate the interaction
-            - the rules and constrains that {agent2} must comply with and do not terminate the interaction
-
-            format your answer as a list two columns: ['agent', 'rule']
-        """
-        template2 = """
-            The agent named {agent1} recieved the following prompt:
-            Prompt: {prompt1}
-
-            The agent named {agent2} recieved the following prompt
-            Prompt: {prompt2}
-
-            From these prompts extract:
-
-            - the exact conditions that, if fulfilled, the interaction between the two agents must be terminated
-
-            format your answer as a list two columns: ['agent', 'rule']
-        """
-
-        if to_extract=="rules":
-            template=template1
+        if keyword_start != -1 and keyword_end != -1:
+            return agent_prompt[keyword_start + 2:keyword_end]
         else:
-            template=template2
+            return None
+        
+    def check(self, sender: Agent, message):
+        if sender == self.agent1:
+            # Check if the message of Agent 1 is compliant with Agent 1's rules
+            prompt = f"Check if the message of Agent: {sender.name} is compliant with Agent {sender.name} rules.\n\nMessage: {message}\n\nRules: {self.agent1_rules} \n\n You answer should be: 'COMPLIANT' or 'NON COMPLIANT because ..' and explain why it is non compliant"
+        elif sender == self.agent2:
+            # Check if the message of Agent 2 is compliant with Agent 2's rules
+            prompt = f"Check if the message of Agent: {sender.name} is compliant with Agent {sender.name}.\n\nMessage: {message}\n\nRules: {self.agent2_rules}\n\n You answer should be: 'COMPLIANT' or 'NON COMPLIANT because ..' and explain why it is non compliant"
+        else:
+            raise ValueError("Invalid sender")
 
-        prompt = PromptTemplate(
-            template=template,
-            input_variables=["agent1", "prompt1", "agent2", "prompt2"],
-        )
+        # Use the contract's language model to check compliance
+        try:
+            feedback = self.model(prompt)
+            logger.debug(f"[Contract: {self.name}] - Compliance test feedback: {feedback}")
+        except Exception as e:
+            logger.error("[Contract: {self.name}] Error while checking compliance:", str(e))
 
-        _input = prompt.format_prompt(
-            agent1=agent1, prompt1=prompt1, agent2=agent2, prompt2=prompt2)
+        if feedback.lower() == "compliant":
+            return "compliant"
+        else:
+            # Return a prompt to the sender for a second chance
+            return f"Your last message is {feedback}. Please review your message and provide a compliant response."
 
-        output = self.llm([HumanMessage(content=_input.to_string())]).content
+    
+    def run(self, input):
+        while self.interaction_count < self.max_interactions:
+            if self.interaction_count % 2 == 0:
+                sender:Agent = self.agent1
+                receiver:Agent = self.agent2
+                termination_keyword = self.agent1_termination_keyword
+            else:
+                sender:Agent = self.agent2
+                receiver:Agent = self.agent1
+                termination_keyword = self.agent2_termination_keyword
 
-        print(f"Extract :\n({to_extract}): {output}")
+            # Log the beginning of a new interaction
+            logger.info(f"[Contract: {self.name}] Starting interaction {self.interaction_count + 1}")
+
+            # Run the sender's agent
+            logger.debug(f"[Contract: {self.name}] Running sender ({sender.name}) with input: {input}")
+            try:
+                output = sender.run(input)
+                logger.debug(f"[Contract: {self.name}] Sender's output: {output}")
+            except Exception as e:
+                logger.error(f"[Contract: {self.name}]: Error while calling the model of agent: {sender.name}: ", str(e))
+            
+
+            # Check compliance and provide feedback
+            compliance = self.check(sender, output)
+            logger.debug(f"[Contract: {self.name}] Compliance check result: {compliance}")
+
+            if compliance == "compliant":
+                # Run the receiver's agent
+                logger.debug(f"[Contract: {self.name}] Running receiver ({receiver.name}) with input: {output}")
+                output = receiver.run(output)
+                logger.debug(f"[Contract: {self.name}] Receiver's output: {output}")
+                self.interaction_count += 1
+            else:
+                # If the message is not compliant, the sender gets a second chance
+                # by providing a compliant response.
+                input = compliance
+                logger.warning(f"[Contract: {self.name}] Sender ({sender.name}) provided a non-compliant message. Retrying.")
+
+            # Check if the termination keyword is present in the message
+            if termination_keyword and termination_keyword in output:
+                logger.info("f[Contract: {self.name}] Termination condition met. Ending interaction.")
+                break
 
         return output
-
-
-    def _check(self, message, sender):
-        answer = 1
-        checkPrompt = """
-        You will be provided with a message sent by a sender and a list of compliance rule and termination rules.
-        You must check if the message is compliant with the compliance rules and if the termination condition is satisfied.
-        -----
-        message: {message}
-        -----
-        sender: {sender}
-        -----
-        compliance rules: {rules}
-        -----
-        termination rules: {termination}
-
-        ----
-        
-        Your final decision should formatted as follow:
-        
-        
-        REASON: <YOUR_REASON>
-        Decision: <YOUR_DECISION>
-        
-        <YOUR_DECISION> may be one of the following:
-        - COMPLIANT If compliant and not terminated
-        - NON_COMPLIANT If not compliant
-        - COMPLIANT_AND_TERMINATED If compliant and terminated
-        """
-        # In the case where you answer is "NON COMPLIANT" and only in this case 
-        systemPrompt = (SystemMessagePromptTemplate
-                        .from_template(checkPrompt)
-                        .format(message=message, sender=sender.name,rules=self.rules, termination=self.termination))
-        # à mettre dans un block try/except intelligent?    #syntax à revoir
-        answer = self.parse(self.llm(
-            [HumanMessage(content=systemPrompt.content)]
-        ))
-        print(f"=======\nContract: {self.name}\nMessage from agent: {sender.name}\nStatus =\n", str(answer))
-        print(f"\n")
-        return answer, answer.split("Decision: ")[-1]
-    
-
-    def parse(self, message):
-        return message.content
-    
-
-    def run(self, input):
-        terminated = False
-        iteration = 0
-
-        # if NOT COMPLIED --> exit while loop ?
-        # attention si Terminated on doit retourner les deux derniers outputs sinon on peut ne retourner 
-        # que la formule de terminaison (dernier output exemple I agree)ce qui ne sert à rien au contrat suivant
-       
-        output_agent2 = input 
-        while not terminated and iteration < self.MAX_ITER:
-            input_agent1 = output_agent2
-            terminated, output_agent1 = self.check_agent(self.agent1, input_agent1)
-            if not terminated:
-                input_agent2 = output_agent1
-                terminated, output_agent2 = self.check_agent(self.agent2, input_agent2)
-            iteration += 1
-
-        return output_agent1, output_agent2
-
-    def check_agent(self, agent, input):
-        iteration = 0
-        compliant = False
-        terminated = False
-        status = "COMPLIANT"
-        reasons = "Waiting for your message"
-        while not compliant and iteration < self.MAX_ITER:
-            print(f"=======\nContract: {self.name} - Iteration: {iteration}\n")
-            output = agent.step(input, status, reasons)
-            reasons, status = self._check(output, sender=agent)
-            compliant =  status in ["COMPLIANT", "COMPLIANT_AND_TERMINATED"]
-            terminated = status in ["COMPLIANT_AND_TERMINATED"]
-            iteration += 1
-        return terminated, output
