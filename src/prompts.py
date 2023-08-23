@@ -16,18 +16,27 @@ your last rephrased business idea: <LAST MESSAGE>
 Your answer must be only with your rephrased business idea.
 If the message containes {{terminated}} you must return your last business idea and nothing else.
 """
-extract_rules_template="""You will be provided with the prompt of two agents. Agent 1 is named <FIRST AGENT NAME>. Agent 2 is named <SECOND AGENT NAME>.
-Each agent recieved a set of instructions. You role is to extract from these instructions and only from these instructions
-the constrains that apply to the agent: <EXTRACT RULES FOR AGENT>. Don't invent rules that are not mentioned in the instructions of the agents.
- ------------------------------------
- First agent instructions are: <FIRST AGENT INSTRUCTIONS>
- ------------------------------------
- Second agent instructions are: <SECOND AGENT INSTRUCTIONS>
- ------------------------------------
-Your answer should be limited to the rules and constrains that agent <EXTRACT RULES FOR AGENT> must comply with for his answer to be compliant 
-Ignore any rule related to termination condition
-Return your answer as a bullet list of rules. DO not add anythink else to your answer:
+extract_rules_template="""
+Task Description: Your task is to extract and list the specific constraints that apply to each agent based 
+solely on their provided instructions. Avoid inventing any rules not mentioned in their respective instructions. 
+The focus should be on extracting compliance rules for each agent, excluding any related to termination conditions.
+For example:
+Q: extract the constrains that agent1 must comply with based on the following instructions:
+- Instruction of agent 1: Provide a legal busines idea. You are allowed to revise your idea. You will recieve a proposition rephrasing your business idea. You are allowed to suggest modification
+A: 
+- Agent 1 must provide a legal idea
+- Agent 1 is allowed to submit suggestions to modify the rephrased busines idea
+
+Q: extract constrains for agent <EXTRACT RULES FOR AGENT> based on the following instructions
+Agent 1 name: <FIRST AGENT NAME> 
+Instructions for Agent 1: <FIRST AGENT INSTRUCTIONS>
+
+Agent 2 name: <SECOND AGENT NAME> 
+Instructions for Agent 1: <SECOND AGENT INSTRUCTIONS>
+
+Please provide your answer in the form of a bullet-pointed list of rules. Do not include any additional information.
 """
+
 
 extract_termination_keywords="""You will be provided with the the instructions of two agents. Agent 1 is named <FIRST AGENT NAME>. Agent 2 is named <SECOND AGENT NAME>.
 Each agent recieved a set of instructions. They will collaborate to achieve a mission. The mission ends once on of the agents return a termination keyword. 
