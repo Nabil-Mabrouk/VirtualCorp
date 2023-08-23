@@ -17,8 +17,8 @@ class Model(ABC):
         pass
 
 class HumanModel(Model):
-    def run(self):
-        user_input = input(f"Please enter your response: ")
+    def run(self, prompt):
+        user_input = input(prompt)
         return user_input
 
 class GPTModel(Model):

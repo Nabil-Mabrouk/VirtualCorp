@@ -37,7 +37,7 @@ class Contract:
 
         # Max number of interactions between agent1 and agent2
         self.max_interactions=max_iter
-        self.iteraction_count=0
+        self.interaction_count=0
 
         # logging
         logger.info(f"[Contract: {self.name}]: Between agent 1: {self.agent1.name} and agent 2: {self.agent2.name}")
@@ -64,47 +64,55 @@ class Contract:
         return rules
         
     def check(self, sender: Agent, message):
-        if sender == self.agent1:
-            # Check if the message of Agent 1 is compliant with Agent 1's rules
-            prompt = f"Check if the message of Agent: {sender.name} is compliant with Agent {sender.name} rules.\n\nMessage: {message}\n\nRules: {self.agent1_rules} \n\n You answer should be: 'COMPLIANT' or 'NON COMPLIANT because ..' and explain why it is non compliant"
-        elif sender == self.agent2:
-            # Check if the message of Agent 2 is compliant with Agent 2's rules
-            prompt = f"Check if the message of Agent: {sender.name} is compliant with Agent {sender.name}.\n\nMessage: {message}\n\nRules: {self.agent2_rules}\n\n You answer should be: 'COMPLIANT' or 'NON COMPLIANT because ..' and explain why it is non compliant"
+        logger.debug(f"[Contract: {self.name}]: checkin compliance of message of agent : {sender.name}\n Message = {message}")
+        if sender.name == self.agent1.name:
+            input_dict={"agent name":sender.name,
+                "agent message":message,
+                "rules": self.agent1_rules,
+                }
+            prompt = Message(pts.compliance_check_prompt).prompt(input_dict)
+
+        elif sender.name == self.agent2.name:
+            input_dict={"agent name":sender.name,
+                "agent message":message,
+                "rules": self.agent2_rules,
+                }
+            prompt = Message(pts.compliance_check_prompt).prompt(input_dict)
         else:
+            logger.error(f"[Contract : {self.name}]: error occured during prompt generation \n message = {message} \n sender = {sender.name}")
             raise ValueError("Invalid sender")
 
         # Use the contract's language model to check compliance
         try:
-            feedback = self.model(prompt)
+            feedback = self.model.run(prompt)
             logger.debug(f"[Contract: {self.name}] - Compliance test feedback: {feedback}")
         except Exception as e:
-            logger.error("[Contract: {self.name}] Error while checking compliance:", str(e))
+            logger.error(f"[Contract: {self.name}] Error while checking compliance:", str(e))
 
         if feedback.lower() == "compliant":
             return "compliant"
         else:
             # Return a prompt to the sender for a second chance
-            return f"Your last message is {feedback}. Please review your message and provide a compliant response."
+            return f"Your last was not compliant. Please review your message and provide a compliant response. \n compliance checking report: {feedback}"
 
     
     def run(self, input):
         while self.interaction_count < self.max_interactions:
+            termination_keyword = self.termination_keyword
             if self.interaction_count % 2 == 0:
                 sender:Agent = self.agent1
-                receiver:Agent = self.agent2
-                termination_keyword = self.termination_keyword
+                receiver:Agent = self.agent2 
             else:
                 sender:Agent = self.agent2
                 receiver:Agent = self.agent1
-                termination_keyword = self.termination_keyword
 
             # Log the beginning of a new interaction
             logger.info(f"[Contract: {self.name}] Starting interaction {self.interaction_count + 1}")
 
             # Run the sender's agent
-            logger.debug(f"[Contract: {self.name}] Running sender ({sender.name}) with input: {input}")
+            logger.debug(f"[Contract: {self.name}] Running sender ({sender.name}) with input {input}")
             try:
-                output = sender.run(input)
+                output = sender.run({"message": input, 'last message':sender.last_message})
                 logger.debug(f"[Contract: {self.name}] Sender's output: {output}")
             except Exception as e:
                 logger.error(f"[Contract: {self.name}]: Error while calling the model of agent: {sender.name}: ", str(e))
@@ -117,7 +125,7 @@ class Contract:
             if compliance == "compliant":
                 # Run the receiver's agent
                 logger.debug(f"[Contract: {self.name}] Running receiver ({receiver.name}) with input: {output}")
-                output = receiver.run(output)
+                output = receiver.run({"message":output, "last message":receiver.last_message})
                 logger.debug(f"[Contract: {self.name}] Receiver's output: {output}")
                 self.interaction_count += 1
             else:

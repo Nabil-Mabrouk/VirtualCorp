@@ -1,3 +1,4 @@
+from logger_config import logger
 class Message:
     def __init__(self, template):
         self.template = template
@@ -14,6 +15,7 @@ class Message:
         """
         message = self.template
         for key, value in input_dict.items():
+            logger.debug(f"[Message]: {key} : {value}")
             placeholder = f"<{key.upper()}>"
             message = message.replace(placeholder, value)
         return message

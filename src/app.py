@@ -36,6 +36,7 @@ def start():
     contract1=Contract("Business Validation", agent1=agent1, agent2=agent2, model=gpt_model2)
 
     pipeline = Pipeline(name="VirtualCorp", contracts=[contract1])
+    pipeline.run(pts.human_prompt)
 
 
 if __name__ == '__main__':
