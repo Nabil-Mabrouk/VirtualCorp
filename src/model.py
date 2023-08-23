@@ -1,41 +1,40 @@
 from abc import ABC, abstractmethod
+from logger_config import logger
+from langchain.chat_models import ChatOpenAI
 import openai
 import os
-from logger_config import logger
+from dotenv import load_dotenv
+load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class Model(ABC):
-    def __init__(self, model_name=None):
+    def __init__(self, model_name=None, temperature=None):
         self.model_name = model_name
+        self.temperature=temperature
 
     @abstractmethod
     def run(self, input_text):
         pass
 
-
 class HumanModel(Model):
-    def __init__(self):
-        super().__init__()
-
-    def run(self, input_text):
-        # For human models, interactively collect input from the human
-        user_input = input(f"[Human Model] Please provide your response to: {input_text}\nYour response: ")
+    def run(self):
+        user_input = input(f"Please enter your response: ")
         return user_input
-    
-class GPTModel(Model):
-    def __init__(self, model_name):
-        super().__init__(model_name)
-        self.model = openai.Completion.create(
-            engine=model_name,
-            temperature=0.7,
-            max_tokens=50
-        )
 
-    def run(self, input_text):
-        # For language models, run the model and log the action
-        response = self.model.run(input_text)
-        logger.debug(f"[GPT Model] Running model with input: {input_text}")
-        logger.debug(f"[GPT Model] Model raw response: {response}")
-        output = response.choices[0].text.strip()
-        logger.debug(f"[GPT Model] Model run method output: {output}")
-        return output
+class GPTModel(Model):
+    def __init__(self, model_name, temperature):
+        super().__init__(model_name, temperature)
+
+    def run(self, prompt):
+        try:
+            response = openai.Completion.create(
+                engine=self.model_name,
+                prompt=prompt,
+                temperature=self.temperature,
+                max_tokens=2000,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0)
+            return response.choices[0].text.strip()
+        except Exception as e:
+            logger.error(f"Error in GPTModel.run(): {str(e)}\n Prompt = {prompt}")

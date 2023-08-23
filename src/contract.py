@@ -1,47 +1,67 @@
 from agent import Agent
 from logger_config import logger
-
+import prompts as pts
+from message import Message
 
 class Contract:
     def __init__(self, name, model, agent1, agent2, max_iter=10):
         self.name=name
         self.model=model
-        self.agent1 = agent1
-        self.agent2 = agent2
+        self.agent1:Agent = agent1
+        self.agent2:Agent = agent2
 
         # Extract Compliance rules
-        self.agent1_rules = self.extract_rules(agent1, agent1.template, agent2.template)
-        self.agent2_rules = self.extract_rules(agent2, agent2.template, agent1.template)
+        input_dict1={"First agent name":self.agent1.name,
+                    "Second agent name":self.agent2.name,
+                    "First agent instructions": self.agent1.message.template,
+                    "Second agent instructions": self.agent2.message.template,
+                    "extract rules for agent":self.agent1.name #extract rules for Agent 1
+                    }
+        input_dict2={"First agent name":self.agent1.name,
+                    "Second agent name":self.agent2.name,
+                    "First agent instructions": self.agent1.message.template,
+                    "Second agent instructions": self.agent2.message.template,
+                    "extract rules for agent":self.agent2.name #extract rules for Agent 2
+                    }
         
+        prompt1=Message(pts.extract_rules_template).prompt(input_dict1)
+        prompt2=Message(pts.extract_rules_template).prompt(input_dict2)
+
+        self.agent1_rules = self.extract_rules(prompt1)
+        self.agent2_rules = self.extract_rules(prompt2)
+        
+        prompt=Message(pts.extract_termination_keywords).prompt(input_dict1)
+
         # Extract termination keywords from the agent's prompt templates
-        self.agent1_termination_keyword = self.extract_termination_keyword(agent1.prompt_template)
-        self.agent2_termination_keyword = self.extract_termination_keyword(agent2.prompt_template)
+        self.termination_keyword = self.extract_termination_keyword(prompt)
 
         # Max number of interactions between agent1 and agent2
         self.max_interactions=max_iter
         self.iteraction_count=0
+
+        # logging
+        logger.info(f"[Contract: {self.name}]: Between agent 1: {self.agent1.name} and agent 2: {self.agent2.name}")
+        logger.info(f"[Contract: {self.name}]: Compliance rule for agent 1: {self.agent1.name}:\n {self.agent1_rules}")
+        logger.info(f"[Contract: {self.name}]: Compliance rule for agent 2: {self.agent2.name}:\n {self.agent2_rules}")
+        logger.info(f"[Contract: {self.name}]: Termination keywords:\n {self.termination_keyword}")
     
-    def extract_rules(self, agent, agent_prompt, other_agent_prompt):
-        # Create a prompt to extract rules for the given agent
-        prompt = f"You are {agent}. Your prompt template is:\n\n{agent_prompt}\n\nFor this interaction, you will communicate with another agent using their prompt template:\n\n{other_agent_prompt}\n\nPlease provide the rules that {agent} must comply with."
-
+    def extract_rules(self, prompt):
+        
         # Use the contract's language model to extract rules
-        response = self.model.run(prompt)
+        rules = self.model.run(prompt)
 
-        # Extract and return the rules from the model's response
-        rules = response.choices[0].text.strip()
+        # logging for debug
+        logger.debug(f"[Contract: {self.name}]: Rule extraction prompt: {prompt}")
+        logger.debug(f"[Contract: {self.name}]: Language model results: {rules}")
+
         return rules
 
-    def extract_termination_keyword(self, agent_prompt):
-        # Extract a termination keyword from the agent's prompt template
-        # In the agent template the termination keyword must be enclosed in double curly braces, e.g., {{terminate}}
-        keyword_start = agent_prompt.find("{{")
-        keyword_end = agent_prompt.find("}}")
+    def extract_termination_keyword(self, prompt):
+        
+        # Use the contract's language model to extract rules
+        rules = self.model.run(prompt)
 
-        if keyword_start != -1 and keyword_end != -1:
-            return agent_prompt[keyword_start + 2:keyword_end]
-        else:
-            return None
+        return rules
         
     def check(self, sender: Agent, message):
         if sender == self.agent1:
@@ -72,11 +92,11 @@ class Contract:
             if self.interaction_count % 2 == 0:
                 sender:Agent = self.agent1
                 receiver:Agent = self.agent2
-                termination_keyword = self.agent1_termination_keyword
+                termination_keyword = self.termination_keyword
             else:
                 sender:Agent = self.agent2
                 receiver:Agent = self.agent1
-                termination_keyword = self.agent2_termination_keyword
+                termination_keyword = self.termination_keyword
 
             # Log the beginning of a new interaction
             logger.info(f"[Contract: {self.name}] Starting interaction {self.interaction_count + 1}")

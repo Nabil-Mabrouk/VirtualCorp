@@ -14,7 +14,7 @@ This project enables automated business creation with a focuss on compliance. It
 1. Clone the repository: `git clone https://github.com/yourusername/virtualcorp.git`
 2. Navigate to the project directory: `cd virtualcorp`
 3. Install dependencies: `pip install -r requirements.txt`
-4. Run: `python app.py`
+4. Run: `python src/app.py`
 
 ## Usage
 - You can customize the program by modifying the app.py file and the prompts.py file

@@ -2,8 +2,8 @@ import logging
 import colorlog
 
 # Create a custom logger with colored output
-logger = colorlog.getLogger("custom_logger")
-logger.setLevel(logging.DEBUG)
+logger = colorlog.getLogger("VirtualCORP")
+logger.setLevel(logging.INFO)
 
 handler = colorlog.StreamHandler()
 handler.setFormatter(colorlog.ColoredFormatter(
