@@ -2,6 +2,7 @@
 import os
 import openai
 from dotenv import load_dotenv
+import streamlit as st
 
 # Access the secret key
 load_dotenv()
@@ -13,6 +14,7 @@ from pipeline import Pipeline
 from logger_config import logger
 from model import HumanModel, GPTModel
 import prompts as pts
+
 
 def start():
 
@@ -37,6 +39,24 @@ def start():
 
     pipeline = Pipeline(name="VirtualCorp", contracts=[contract1])
     pipeline.run(pts.human_prompt)
+
+class Demo():
+    def __init__(self):
+        self.model = None
+        self.user_interface = None
+
+    def initiate_ui(self):
+        st.title("VirtualCORP")
+        presentation="""This project enables automated business creation with a focuss on compliance. 
+        It involves agents, smart contracts, and pipelines to facilitate collaborative tasks."""
+        st.info(presentation)
+        self.tab1, self.tab2, self.tab3=st.tabs(["Home", "Doc", "Contact"])
+        with self.tab1:
+            st.header("Enter you business idea ..")
+            st.info("Examples:\n - I would like to create an automated business to help clients measure their carbon footprint")
+            selected_model_name = st.selectbox("Select Model:", list(models.keys()))
+            self.model = models[selected_model_name]
+
 
 
 if __name__ == '__main__':

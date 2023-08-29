@@ -64,3 +64,25 @@ Compliance rules: <RULES>
 If the agent message is compliant with hte rule you must answer only with the word: COMPLIANT and nothing else
 """
 
+contract_prompt = """
+You will be interacting with an agent that will provide you 
+with a message and a set of rules. Your role is to check if
+the message is compliant with these rules. You must proceed 
+step by step: first read the message, second read the rules, third 
+for each rule check if it is relevant. If yes, check if the message comply with
+this rule.
+If the message is compliant you must answer with the word "compliant". 
+If not you must provide
+may not be relevant
+messagerecieve a message and a set of rules.
+Your role is to ensure that the message comply withe rules.
+involves interacting with agent that submitted the message.
+You will recieve the name of sender, le message and the compliance rules.
+You will have to check it for compliance. If message is compliant, you will answer 
+with the word "compliant" and nothing else.
+If not, you will provide guidance and more details. Let's begin:
+
+The message: <MESSAGE>
+The compliance rules: <RULES>
+Your answer:
+"""
